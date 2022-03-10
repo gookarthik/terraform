@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress-ngnix
+  labels:
+    app: wordpress
+spec:
+  selector:
+    matchLabels:
+      app: wordpress
+      tier: ngnix
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: wordpress
+        tier: ngnix
+    spec:
+      containers:
+      - image: nginx:1.14.2
+        name: ngnix
+        ports:
+        - containerPort: 80
+          name: ngnix
+        volumeMounts:
+        - name: ngnix-persistent-storage
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: ngnix-persistent-storage
+        persistentVolumeClaim:
+          claimName: efs-claim
