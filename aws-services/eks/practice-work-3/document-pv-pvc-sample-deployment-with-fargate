@@ -1,0 +1,73 @@
+
+1. create new cluster. [drictly in console, not in ekctl or terraform]
+2. create new fargate profile(attach the private subnet)
+3. create new efs with the same vpc
+4. aws eks update-kubeconfig --name clustername
+5. create namspace in powershell with same name
+	kubectl create namespace fargate
+6. go to the namespace
+	kubectl config set-context --current --namespace=fargate
+4. apply pv-pvc and deployment
+
+Note:
+	to bring pod to running state, we need to allow all traffic in security group which is attached by fargate name profile
+
+
+
+
+aws eks update-kubeconfig --name new
+kubectl create namespace fargate
+kubectl get namespace
+kubectl config set-context --current --namespace=fargate
+
+
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work> kubectl create namespace fargate
+namespace/fargate created
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work> kubectl namespace ls
+Error: unknown command "namespace" for "kubectl"
+Run 'kubectl --help' for usage.
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work> kubectl get namespace
+NAME              STATUS   AGE
+default           Active   9m43s
+fargate           Active   24s
+kube-node-lease   Active   9m45s
+kube-public       Active   9m45s
+kube-system       Active   9m45s
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work> kubectl config set-context --current --namespace=fargate
+Context "arn:aws:eks:ap-southeast-1:674159014239:cluster/new" modified.
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work> kubectl apply -f .\fargate.yaml
+storageclass.storage.k8s.io/efs-sc created
+persistentvolume/efs-pv created
+persistentvolumeclaim/efs-claim created
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work> kubectl get pv
+NAME     CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM               STORAGECLASS   REASON   AGE
+efs-pv   5Gi        RWX            Retain           Bound    fargate/efs-claim   efs-sc                  13s
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work> kubectl get pvc
+NAME        STATUS   VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+efs-claim   Bound    efs-pv   5Gi        RWX            efs-sc         17s
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work> kubectl apply -f .\sample-deploy-with-pv.yaml
+deployment.apps/wordpress-ngnix created
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work> kubectl get pods
+NAME                               READY   STATUS    RESTARTS   AGE
+wordpress-ngnix-6c79c9c75f-stzlb   0/1     Pending   0          9s
+wordpress-ngnix-6c79c9c75f-stzlb   1/1     Running   0          1m
+
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work> kubectl exec -it wordpress-ngnix-6c79c9c75f-stzlb /bin/bash
+kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] -- [COMMAND] instead.
+root@wordpress-ngnix-6c79c9c75f-stzlb:/# ls
+bin  boot  dev  etc  home  lib  lib64  media  mnt  opt  proc  root  run  sbin  srv  sys  tmp  usr  var
+root@wordpress-ngnix-6c79c9c75f-stzlb:/# df -h
+Filesystem      Size  Used Avail Use% Mounted on
+overlay          30G  9.5G   19G  35% /
+tmpfs            64M     0   64M   0% /dev
+tmpfs           1.9G     0  1.9G   0% /sys/fs/cgroup
+shm              64M     0   64M   0% /dev/shm
+overlay          30G  9.5G   19G  35% /etc/hosts
+/dev/nvme1n1     30G  9.5G   19G  35% /etc/hostname
+127.0.0.1:/     8.0E     0  8.0E   0% /var/lib/mysql
+tmpfs           1.9G   12K  1.9G   1% /run/secrets/kubernetes.io/serviceaccount
+tmpfs           1.9G     0  1.9G   0% /proc/acpi
+tmpfs           1.9G     0  1.9G   0% /sys/firmware
+root@wordpress-ngnix-6c79c9c75f-stzlb:/#
+
+=================================================================================================================================================
