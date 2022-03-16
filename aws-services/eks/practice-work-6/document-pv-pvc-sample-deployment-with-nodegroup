@@ -1,0 +1,118 @@
+
+1. create new cluster. [drictly in console, not in ekctl or terraform]
+2. create new node group
+3. create new volume 
+4. aws eks update-kubeconfig --name clustername
+5. go to the namespace
+	kubectl config set-context --current --namespace=default
+4. apply pv-pvc and deployment
+
+Note:
+	to bring pod to running state, we need to allow all traffic in security group which is attached by fargate name profile
+
+
+
+
+aws eks update-kubeconfig --name new
+kubectl get namespace
+
+
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work> kubectl get namespace
+NAME              STATUS   AGE
+default           Active   9m43s
+fargate           Active   24s
+kube-node-lease   Active   9m45s
+kube-public       Active   9m45s
+kube-system       Active   9m45s
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work5> kubectl config set-context --current --namespace=default
+Context "arn:aws:eks:ap-southeast-1:674159014239:cluster/new" modified.
+
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-5> kubectl apply -f .\2ebs-pv-pvc.yaml
+storageclass.storage.k8s.io/gp3 created
+persistentvolume/ebs-pv-1 created
+persistentvolumeclaim/ebs-claim-1 created
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-5> kubectl apply -f .\3ebs-pv-pvc.yaml
+storageclass.storage.k8s.io/gp3 unchanged
+persistentvolume/ebs-pv-2 created
+persistentvolumeclaim/ebs-claim-2 created
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-5> kubectl get pv
+NAME       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                 STORAGECLASS   REASON   AGE
+ebs-pv-1   5Gi        RWX            Retain           Bound    default/ebs-claim-1   ebs-sc                  21s
+ebs-pv-2   5Gi        RWX            Retain           Bound    default/ebs-claim-2   ebs-sc                  10s
+efs-pv     5Gi        RWX            Retain           Bound    fargate/efs-claim     efs-sc                  32h
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-5> kubectl get pvc
+NAME          STATUS   VOLUME     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+ebs-claim-1   Bound    ebs-pv-1   5Gi        RWX            ebs-sc         29s
+ebs-claim-2   Bound    ebs-pv-2   5Gi        RWX            ebs-sc         18s
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-5> kubectl apply -f .\4statefulset.yml
+statefulset.apps/mysql created
+service/mysql created
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-5> kubectl get sts --watch
+NAME    READY   AGE
+mysql   1/2     20s
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-5> kubectl get pods --watch
+NAME      READY   STATUS              RESTARTS   AGE
+mysql-0   1/1     Running             0          84s
+mysql-1   0/1     ContainerCreating   0          73s
+
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-5> kubectl describe pod mysql-1
+Name:           mysql-1
+Namespace:      default
+Priority:       0
+Node:           ip-172-31-35-54.ap-southeast-1.compute.internal/172.31.35.54
+Start Time:     Sat, 12 Mar 2022 18:58:03 +0530
+Labels:         app=mysql
+                controller-revision-hash=mysql-5878cb644
+                statefulset.kubernetes.io/pod-name=mysql-1
+Annotations:    kubernetes.io/psp: eks.privileged
+Status:         Pending
+IP:
+IPs:            <none>
+Controlled By:  StatefulSet/mysql
+Containers:
+  mysql:
+    Container ID:
+    Image:          mysql:5.6
+    Image ID:
+    Port:           3306/TCP
+    Host Port:      0/TCP
+    State:          Waiting
+      Reason:       ContainerCreating
+    Ready:          False
+    Restart Count:  0
+    Environment:
+      MYSQL_ROOT_PASSWORD:  <set to the key 'ROOT_PASSWORD' in secret 'mysecret'>  Optional: false
+    Mounts:
+      /var/lib/mysql from mysql-persistent-storage-2 (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from default-token-8cxmr (ro)
+Conditions:
+  Type              Status
+  Initialized       True
+  Ready             False
+  ContainersReady   False
+  PodScheduled      True
+Volumes:
+  mysql-persistent-storage-2:
+    Type:       PersistentVolumeClaim (a reference to a PersistentVolumeClaim in the same namespace)
+    ClaimName:  ebs-claim-2
+    ReadOnly:   false
+  default-token-8cxmr:
+    Type:        Secret (a volume populated by a Secret)
+    SecretName:  default-token-8cxmr
+    Optional:    false
+QoS Class:       BestEffort
+Node-Selectors:  <none>
+Tolerations:     node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                 node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason              Age                      From                     Message
+  ----     ------              ----                     ----                     -------
+  Normal   Scheduled           56s                      default-scheduler        Successfully assigned default/mysql-1 to ip-172-31-35-54.ap-southeast-1.compute.internal
+  Warning  FailedAttachVolume  <invalid> (x8 over 56s)  attachdetach-controller  AttachVolume.Attach failed for volume "ebs-pv-2" : "error attaching EBS volume \"vol-09e416e945ebf8342\"" to instance "i-0268e99e9e07101ed" since volume is currently attached to "i-07f9bce2c15532122"
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-5>
+
+
+to connect mysql
+===============
+kubectl exec -it mysql-0 -- mysql -u root -p
+=================================================================================================================================================
