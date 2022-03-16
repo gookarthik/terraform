@@ -1,0 +1,86 @@
+
+1. create new cluster. [drictly in console, not in ekctl or terraform]
+2. create new fargate profile(attach the private subnet)
+3. create new efs with the same vpc [select region]
+4. aws eks update-kubeconfig --name clustername
+5. create namspace in powershell with same name
+	kubectl create namespace fargate
+6. go to the namespace
+	kubectl config set-context --current --namespace=fargate
+4. apply pv-pvc and deployment
+
+Note:
+	to bring pod to running state, we need to allow all traffic in security group which is attached by fargate name profile
+
+
+
+
+aws eks update-kubeconfig --name new
+kubectl create namespace fargate
+kubectl get namespace
+kubectl config set-context --current --namespace=fargate
+
+
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work> kubectl create namespace fargate
+namespace/fargate created
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work> kubectl namespace ls
+Error: unknown command "namespace" for "kubectl"
+Run 'kubectl --help' for usage.
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work> kubectl get namespace
+NAME              STATUS   AGE
+default           Active   9m43s
+fargate           Active   24s
+kube-node-lease   Active   9m45s
+kube-public       Active   9m45s
+kube-system       Active   9m45s
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work> kubectl config set-context --current --namespace=fargate
+Context "arn:aws:eks:ap-southeast-1:674159014239:cluster/new" modified.
+
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-5> kubectl config set-context --current --namespace=fargate
+Context "arn:aws:eks:ap-southeast-1:674159014239:cluster/new" modified.
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-5> kubectl get pv
+No resources found
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-5> kubectl get pvc
+No resources found in fargate namespace.
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-5> kubectl apply -f .\1efs-pv-pvc.yaml
+storageclass.storage.k8s.io/efs-sc created
+persistentvolume/efs-pv-1 created
+persistentvolumeclaim/efs-claim-1 created
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-5> kubectl apply -f .\2efs-pv-pvc.yaml
+persistentvolume/efs-pv-2 created
+persistentvolumeclaim/efs-claim-2 created
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-5> kubectl apply -f .\3statefulset.yml
+service/mongodb-service created
+statefulset.apps/mongo-statefulset created
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-5> kubectl get pv
+NAME       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                 STORAGECLASS   REASON   AGE
+efs-pv-1   5Gi        RWX            Retain           Bound    fargate/efs-claim-1   efs-sc                  22s
+efs-pv-2   5Gi        RWX            Retain           Bound    fargate/efs-claim-2   efs-sc                  16s
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-5> kubectl get pvc
+NAME                               STATUS    VOLUME     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+efs-claim-1                        Bound     efs-pv-1   5Gi        RWX            efs-sc         30s
+efs-claim-2                        Bound     efs-pv-2   5Gi        RWX            efs-sc         23s
+mongo-persistent-storage-mongo-0   Pending                                        standard       107m
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-5>
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-5>
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-5> kubectl get pods --watch
+NAME                  READY   STATUS    RESTARTS   AGE
+mongo-statefulset-0   0/1     Pending   0          35s
+mongo-statefulset-0   0/1     Pending   0          41s
+mongo-statefulset-0   0/1     ContainerCreating   0          44s
+mongo-statefulset-0   1/1     Running             0          88s
+mongo-statefulset-1   0/1     Pending             0          0s
+mongo-statefulset-1   0/1     Pending             0          0s
+mongo-statefulset-1   0/1     Pending             0          50s
+mongo-statefulset-1   0/1     ContainerCreating   0          50s
+mongo-statefulset-1   1/1     Running             0          109s
+mongo-statefulset-2   0/1     Pending             0          0s
+mongo-statefulset-2   0/1     Pending             0          1s
+mongo-statefulset-2   0/1     Pending             0          53s
+mongo-statefulset-2   0/1     ContainerCreating   0          53s
+mongo-statefulset-2   1/1     Running             0          114s
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-5> kubectl get sts
+NAME                READY   AGE
+mongo-statefulset   3/3     5m28s
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-5>
+=================================================================================================================================================

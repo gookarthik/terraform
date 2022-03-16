@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb-service
+  labels:
+    name: mongo
+spec:
+  ports:
+  - port: 27017
+    targetPort: 27017
+  clusterIP: None
+  selector:
+    role: mongo
+
+---
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongo-statefulset
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mongo
+  serviceName: "mongodb"
+  template:
+    metadata:
+      labels:
+        app: mongo
+    spec:
+      containers:
+      - name: mongo-container
+        image: mongo
+        ports:
+        - containerPort: 27017  
+        volumeMounts:
+        - name: pv1
+          mountPath: "/mnt/data1/"        
+        - name: pv2
+          mountPath: "/mnt/data2/"                
+      volumes:
+      - name: pv1
+        persistentVolumeClaim:
+          claimName: efs-claim-1
+      - name: pv2
+        persistentVolumeClaim:
+          claimName: efs-claim-2
+
