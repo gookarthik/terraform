@@ -1,0 +1,62 @@
+
+1. create new cluster. [drictly in console, not in ekctl or terraform]
+2. create new fargate profile(attach the private subnet)
+3. create new efs with the same vpc
+4. aws eks update-kubeconfig --name clustername
+5. create namspace in powershell with same name
+	kubectl create namespace fargate
+6. go to the namespace
+	kubectl config set-context --current --namespace=fargate
+4. apply pv-pvc and deployment
+
+Note:
+	to bring pod to running state, we need to allow all traffic in security group which is attached by fargate name profile
+
+
+
+
+aws eks update-kubeconfig --name new
+kubectl create namespace fargate
+kubectl get namespace
+kubectl config set-context --current --namespace=fargate
+
+
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work> kubectl create namespace fargate
+namespace/fargate created
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work> kubectl namespace ls
+Error: unknown command "namespace" for "kubectl"
+Run 'kubectl --help' for usage.
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work> kubectl get namespace
+NAME              STATUS   AGE
+default           Active   9m43s
+fargate           Active   24s
+kube-node-lease   Active   9m45s
+kube-public       Active   9m45s
+kube-system       Active   9m45s
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work> kubectl config set-context --current --namespace=fargate
+Context "arn:aws:eks:ap-southeast-1:674159014239:cluster/new" modified.
+
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-6> kubectl apply -f .\1secret.yml
+secret/mysecret created
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-6> kubectl apply -f .\2efs-pv-pvc.yaml
+storageclass.storage.k8s.io/efs-sc created
+persistentvolume/efs-pv created
+persistentvolumeclaim/efs-claim created
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-6> kubectl apply -f .\3statefulset.yml
+service/mysql created
+statefulset.apps/efs-app-sts created
+
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-6> kubectl get pods --watch
+NAME            READY   STATUS    RESTARTS   AGE
+efs-app-sts-0   1/1     Running   0          103s
+efs-app-sts-1   0/1     Pending   0          15s
+efs-app-sts-1   0/1     Pending   0          52s
+efs-app-sts-1   0/1     ContainerCreating   0          52s
+efs-app-sts-1   1/1     Running             0          87s
+efs-app-sts-2   0/1     Pending             0          0s
+efs-app-sts-2   0/1     Pending             0          1s
+efs-app-sts-2   0/1     Pending             0          53s
+efs-app-sts-2   0/1     ContainerCreating   0          53s
+efs-app-sts-2   1/1     Running             0          100s
+
+=================================================================================================================================================
