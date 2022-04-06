@@ -1,0 +1,49 @@
+
+1. create new cluster. [drictly in console, not in ekctl or terraform]
+2. create new node group
+3. create new volume 
+4. aws eks update-kubeconfig --name clustername
+5. go to the namespace
+	kubectl config set-context --current --namespace=default
+4. apply pv-pvc and deployment
+
+Note:
+	to bring pod to running state, we need to allow all traffic in security group which is attached by fargate name profile
+
+
+
+
+aws eks update-kubeconfig --name new
+kubectl get namespace
+
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work5> kubectl config set-context --current --namespace=default
+Context "arn:aws:eks:ap-southeast-1:674159014239:cluster/new" modified.
+
+
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-10> kubectl apply -f .\1secret.yml
+secret/mongo-creds configured
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-10> kubectl apply -f .\2ebs-pv-pvc.yaml
+storageclass.storage.k8s.io/ebs-sc-2 unchanged
+persistentvolume/ebs-pv-2 unchanged
+persistentvolumeclaim/ebs-claim-2 unchanged
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-10> kubectl apply -f .\3statefulset.yml
+service/mongodb-service created
+statefulset.apps/mongo-statefulset created
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-10> kubectl get pods --watch
+NAME                               READY   STATUS              RESTARTS   AGE
+deployment-2048-786dbc49f4-s4ltb   1/1     Running             0          94m
+mongo-statefulset-0                0/1     ContainerCreating   0          4s
+mongo-statefulset-0                1/1     Running             0          7s
+mongo-statefulset-1                0/1     Pending             0          0s
+mongo-statefulset-1                0/1     Pending             0          0s
+mongo-statefulset-1                0/1     ContainerCreating   0          0s
+mongo-statefulset-1                1/1     Running             0          3s
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-10> kubectl get sts
+NAME                READY   AGE
+mongo-statefulset   2/2     24s
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-10>
+
+to connect mongo-db
+===============
+kubectl exec -it mongo-statefulset-0 -- mongo -u adminuser -p password123
+=================================================================================================================================================
