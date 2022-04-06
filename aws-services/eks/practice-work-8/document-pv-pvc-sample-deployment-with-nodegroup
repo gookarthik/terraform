@@ -1,0 +1,56 @@
+
+1. create new cluster. [drictly in console, not in ekctl or terraform]
+2. create new node group
+3. create new volume in the availibility zone where our node is running [here we are in "ap-southeast-1a"]
+4. aws eks update-kubeconfig --name clustername
+5. go to the namespace
+	kubectl config set-context --current --namespace=default
+4. apply pv-pvc and deployment
+
+Note:
+	to bring pod to running state, we need to allow all traffic in security group which is attached by fargate name profile
+
+
+
+
+aws eks update-kubeconfig --name new
+kubectl get namespace
+
+
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work> kubectl get namespace
+NAME              STATUS   AGE
+default           Active   9m43s
+fargate           Active   24s
+kube-node-lease   Active   9m45s
+kube-public       Active   9m45s
+kube-system       Active   9m45s
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work5> kubectl config set-context --current --namespace=default
+Context "arn:aws:eks:ap-southeast-1:674159014239:cluster/new" modified.
+
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-6> kubectl get pods
+No resources found in default namespace.
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-6> kubectl apply -f .\1secret.yml
+secret/mysecret created
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-6> kubectl apply -f .\2ebs-pv-pvc.yaml
+storageclass.storage.k8s.io/gp3 created
+persistentvolume/ebs-pv-1 created
+persistentvolumeclaim/ebs-claim-1 created
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-6> kubectl apply -f .\3ebs-pv-pvc.yaml
+persistentvolume/ebs-pv-2 created
+persistentvolumeclaim/ebs-claim-2 created
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-6> kubectl apply -f .\4statefulset.yml
+statefulset.apps/mysql created
+service/mysql created
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-6> kubectl get pods --watch
+NAME      READY   STATUS              RESTARTS   AGE
+mysql-0   0/1     ContainerCreating   0          10s
+mysql-0   1/1     Running             0          19s
+mysql-1   0/1     Pending             0          0s
+mysql-1   0/1     Pending             0          0s
+mysql-1   0/1     ContainerCreating   0          0s
+mysql-1   1/1     Running             0          2s
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-6> kubectl get sts
+NAME    READY   AGE
+mysql   2/2     2m23s
+PS D:\SoftwareInstallation\Xyram-Servers-Work\Arcadia-Infra-Project\eks\practice-work-6>
+=================================================================================================================================================
