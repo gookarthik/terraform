@@ -1,0 +1,24 @@
+import boto3
+import datetime
+ec2 = boto3.resource('ec2',region_name='us-east-1')
+client = boto3.client('ec2',region_name='us-east-1')
+def lambda_handler(event, context):
+    
+    for vol in ec2.volumes.all():
+        if  vol.state=='available':
+            if vol.tags is None:
+                vid=vol.id
+                v=ec2.Volume(vol.id)
+                v.delete()
+                print ('Deleted ' +vid)
+                continue
+            
+            
+    listOfSnapshots = client.describe_snapshots(OwnerIds=['self']).get("Snapshots")
+    snapshots = client.describe_snapshots(OwnerIds=['self'])
+    print(snapshots)
+    for i in range(len(snapshots.get('Snapshots'))):
+        id = snapshots.get('Snapshots')[i].get('SnapshotId')
+        print(id)
+        if(vid == listOfSnapshots[i].get('VolumeId')):
+            client.delete_snapshot(SnapshotId=id)

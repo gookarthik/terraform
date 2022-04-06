@@ -1,0 +1,8 @@
+import boto3
+ec2 = boto3.client('ec2', region_name="us-east-1")
+instances = ['i-02444ace8567c4a0d', 'i-0923b9da7e067166e']
+
+
+def lambda_handler(event, context):
+    ec2.stop_instances(InstanceIds=instances)
+    print('stopped your instances: ' + str(instances))

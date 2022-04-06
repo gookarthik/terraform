@@ -1,0 +1,29 @@
+import boto3
+
+# Create SQS client
+sqs = boto3.client('sqs', region_name='us-east-1')
+def lambda_handler(event, context):
+    queue_url = 'https://sqs.us-east-1.amazonaws.com/884975401017/sqs-que'
+    
+    # Send message to SQS queue
+    response = sqs.send_message(
+        QueueUrl=queue_url,
+        MessageBody=(
+            'Information about current NY Times fiction bestseller for week of 12/11/2017.'
+        )
+    )
+    response1 = sqs.receive_message(
+    QueueUrl='https://sqs.us-east-1.amazonaws.com/884975401017/sqs-que'
+    )
+    print(response1)
+    list = response1['Messages']
+    for body in list:
+        Body = body["Body"]
+    s3 = boto3.resource("s3", region_name='us-east-1')
+    print(Body)
+    
+    txt_data = bytes(Body, 'utf-8')
+    object = s3.Object('xyram-karthik-verginia', 'file_name.txt')
+    result = object.put(Body=txt_data)
+    
+    # print(response)

@@ -1,0 +1,20 @@
+import boto3
+import datetime
+import sys
+s3 = boto3.resource("s3", region_name="us-east-1")
+def lambda_handler(event, context):
+    
+    size_byte=0
+    my_bucket=s3.Bucket('xyram-karthik-verginia')
+    for my_bucket_object in my_bucket.objects.all():
+        print(my_bucket_object.key)
+        size_byte=size_byte+my_bucket_object.size
+        totalsize_gb=(size_byte*0.000001)/1024
+        print(size_byte)
+        print(totalsize_gb)
+
+    sns_arn = "arn:aws:sns:us-east-1:884975401017:new"
+    client1 = boto3.client("sns")
+    s = "xyram-karthik-verginia"
+    resp = client1.publish(TargetArn=sns_arn, Message="Total size of bucket xyram-karthik-verginia is " + str(totalsize_gb) + " GB ", Subject=s)
+    

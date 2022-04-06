@@ -1,0 +1,32 @@
+import boto3
+from datetime import date, datetime, timedelta,timezone
+ec2_client = boto3.client("ec2", region_name="us-east-1")
+def lambda_handler(event, context):
+    
+    reservations = ec2_client.describe_instances(Filters=[
+        {
+            "Name": "instance-state-name",
+            "Values": ["running"],
+        }
+    ]).get("Reservations")
+    
+
+    for reservation in reservations:
+        for instance in reservation["Instances"]:
+            instance_id = instance["InstanceId"]
+            instance_type = instance["InstanceType"]
+            public_ip = instance["PublicIpAddress"]
+            private_ip = instance["PrivateIpAddress"]
+            print(f"{instance_id}, {instance_type}, {public_ip}, {private_ip}")
+
+
+    print(datetime.now(timezone.utc))
+    print(reservations[0].get('Instances')[0].get('LaunchTime'))
+    launchDate=reservations[0].get('Instances')[0].get('LaunchTime').replace(tzinfo=None)
+    print((datetime.today()-launchDate).days)
+    if((datetime.today()-launchDate).days>7):
+        print("sending mail")
+    else:
+        print(7-(datetime.today()-launchDate).days,'days left to sent a   mail')
+    
+        

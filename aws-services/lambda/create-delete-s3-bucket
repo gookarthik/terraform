@@ -1,0 +1,20 @@
+import boto3
+import json
+
+def lambda_handler(event, context):
+    client = boto3.client('s3')
+    bucketList=client.list_buckets().get("Buckets")
+
+    list=[]
+    print(type(client.list_buckets()))
+    print(bucketList)
+    for a in bucketList:
+     list.append(a.get("Name"))
+    print(list)
+    if 'xyram-karthik-verginia' in list:
+        response = client.delete_bucket(Bucket='xyram-karthik-verginia', ExpectedBucketOwner='884975401017')
+        print(response)
+    else:
+        response= client.create_bucket(Bucket='xyram-karthik-verginia')
+        print("hi")
+        

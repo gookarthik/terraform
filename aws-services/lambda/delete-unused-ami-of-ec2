@@ -1,0 +1,39 @@
+import boto3
+ec2_client = boto3.client('ec2', region_name='us-east-1')
+owner_id = '884975401017'
+all_images = {}
+all_used_images = []
+amis_response = ec2_client.describe_images(
+            Filters=[
+                {
+                    'Name': 'root-device-type',
+                    'Values': [ 'ebs']
+                },
+            ],
+            Owners=[ owner_id ]
+        )
+for image_info in amis_response['Images']:
+    image_id = image_info['ImageId']
+    snapshot_ids = []
+    for device_map in image_info['BlockDeviceMappings']:
+        snapshot_ids.append(device_map['Ebs']['SnapshotId'])
+    all_images[image_id] = snapshot_ids
+
+all_instances_response = ec2_client.describe_instances()
+for reserve in all_instances_response['Reservations']:
+    for insta_info in reserve['Instances']:
+        image_id = insta_info['ImageId']
+        if image_id not in all_used_images:
+            all_used_images.append(insta_info['ImageId'])
+
+unused_images = all_images.keys() - all_used_images
+for image_id in unused_images:
+    image_dereg_resp = ec2_client.deregister_image(
+                    ImageId=image_id
+                        )
+    dereg_resp_code = image_dereg_resp['ResponseMetadata']['HTTPStatusCode']
+    for snapshot_id in all_images[image_id]:
+        snap_del_resp = ec2_client.delete_snapshot(
+                        SnapshotId=snapshot_id
+                    )
+        snap_del_resp_code = snap_del_resp['ResponseMetadata']['HTTPStatusCode']
