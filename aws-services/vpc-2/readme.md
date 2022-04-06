@@ -1,1 +1,1 @@
-vpc example
+3 VPC, subnets, with VPC peering
