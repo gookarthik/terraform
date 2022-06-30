@@ -23,4 +23,4 @@ jobs:
         uses: zaproxy/action-baseline@v0.7.0
         with:
           # Target URL
-          target: "https://dotnetthoughts.net"
+          target: "https://dev.interopx.com/"
